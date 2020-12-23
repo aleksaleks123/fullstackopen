@@ -1,0 +1,6 @@
+note over browser:
+browser firstly adds new note 
+into its collection and redraws
+end note
+browser->server: HTTP POST https://studies.cs.helsinki.fi/exampleapp/new_note_spa \n (request payload contains new note content)
+server-->browser: {"message":"note created"}
