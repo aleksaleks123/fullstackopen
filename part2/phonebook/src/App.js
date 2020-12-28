@@ -1,6 +1,26 @@
 import React, { useState, useEffect } from 'react'
 import personService from './services/persons'
 
+const Notification = ({ message }) => {
+  if (message === null) {
+    return null
+  }
+
+  if (message.error) {
+    return (
+      <div className="error">
+        {message.text}
+      </div>
+    )
+  }
+
+  return (
+    <div className="notification">
+      {message.text}
+    </div>
+  )
+}
+
 const Filter = ({ filterText, setFilterText }) => {
   const handleFilterChange = (event) => {
     setFilterText(event.target.value)
@@ -8,7 +28,7 @@ const Filter = ({ filterText, setFilterText }) => {
   return <div>filter shown with <input value={filterText} onChange={handleFilterChange} /></div>
 }
 
-const PersonForm = ({ newName, setNewName, newNumber, setNewNumber, persons, setPersons }) => {
+const PersonForm = ({ newName, setNewName, newNumber, setNewNumber, persons, setPersons, notify }) => {
   const handleNameChange = (event) => {
     setNewName(event.target.value)
   }
@@ -28,7 +48,17 @@ const PersonForm = ({ newName, setNewName, newNumber, setNewNumber, persons, set
             setPersons(persons.map(pers => pers.id !== person.id ? pers : returnedPerson))
             setNewName('')
             setNewNumber('')
+            notify(`Updated ${returnedPerson.name}`)
           })
+          .catch(() => {
+            setNewName('')
+            setNewNumber('')
+            notify(
+              `Information of '${person.name}' has already been removed from server`, true
+            )
+            setPersons(persons.filter(pers => pers.id !== person.id))
+          })
+
       }
       return
     }
@@ -43,6 +73,7 @@ const PersonForm = ({ newName, setNewName, newNumber, setNewNumber, persons, set
         setPersons(persons.concat(returnedPerson))
         setNewName('')
         setNewNumber('')
+        notify(`Added ${returnedPerson.name}`)
       })
 
   }
@@ -58,10 +89,21 @@ const PersonForm = ({ newName, setNewName, newNumber, setNewNumber, persons, set
   </form>
 }
 
-const Persons = ({ persons, setPersons, filterText }) => {
+const Persons = ({ persons, setPersons, filterText, notify }) => {
   const handleDeleteButtonClick = (id, name) => () => {
     if (window.confirm(`Delete ${name}?`)) {
-      personService.remove(id).then(() => personService.getAll()).then(initialPersons => setPersons(initialPersons))
+      personService
+        .remove(id)
+        .then(() => personService.getAll()).then(initialPersons => {
+          setPersons(initialPersons)
+          notify(`Deleted ${name}`)
+        })
+        .catch(() => {
+          notify(
+            `Information of '${name}' has already been removed from server`, true
+          )
+          setPersons(persons.filter(pers => pers.id !== id))
+        })
     }
   }
   return persons.filter(person => person.name.toLowerCase().includes(filterText.toLowerCase()))
@@ -72,19 +114,28 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filterText, setFilterText] = useState('')
+  const [notification, setNotification] = useState(null)
 
   useEffect(() => {
     personService.getAll().then(initialPersons => setPersons(initialPersons))
   }, [])
+  const notify = (text, error = false) => {
+    setNotification({ text, error })
+    setTimeout(() => {
+      setNotification(null)
+    }, 5000)
+  }
+
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notification} />
       <Filter filterText={filterText} setFilterText={setFilterText} />
       <h2>Add a new</h2>
-      <PersonForm newName={newName} setNewName={setNewName} newNumber={newNumber} setNewNumber={setNewNumber} persons={persons} setPersons={setPersons} />
+      <PersonForm newName={newName} setNewName={setNewName} newNumber={newNumber} setNewNumber={setNewNumber} persons={persons} setPersons={setPersons} notify={notify} />
       <h2>Numbers</h2>
-      <Persons persons={persons} setPersons={setPersons} filterText={filterText} />
+      <Persons persons={persons} setPersons={setPersons} filterText={filterText} notify={notify} />
     </div>
   )
 }
