@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
-import blogService from '../services/blogs'
 import PropTypes from 'prop-types'
 
-const BlogForm = ({ blogs, setBlogs, setMessage, toggleBlogForm }) => {
+const BlogForm = ({ addBlogHandler }) => {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [url, setUrl] = useState('')
@@ -14,33 +13,23 @@ const BlogForm = ({ blogs, setBlogs, setMessage, toggleBlogForm }) => {
       author,
       url
     }
-
-    const returnedBlog = await blogService.create(blogObject)
-    setBlogs(blogs.concat(returnedBlog))
     setTitle('')
     setAuthor('')
     setUrl('')
-    setMessage(`a new blog ${returnedBlog.title} by ${returnedBlog.author} added`)
-    setTimeout(() => {
-      setMessage(null)
-    }, 5000)
-    toggleBlogForm()
+    addBlogHandler(blogObject)
   }
 
   return (
     <form onSubmit={addBlog}>
-      <div>title: <input value={title} onChange={({ target }) => setTitle(target.value)} /></div>
-      <div>author: <input value={author} onChange={({ target }) => setAuthor(target.value)} /></div>
-      <div>url: <input value={url} onChange={({ target }) => setUrl(target.value)} /></div>
+      <div>title: <input value={title} onChange={({ target }) => setTitle(target.value)} id='title'/></div>
+      <div>author: <input value={author} onChange={({ target }) => setAuthor(target.value)} id='author' /></div>
+      <div>url: <input value={url} onChange={({ target }) => setUrl(target.value)} id='url' /></div>
       <button type="submit">create</button>
     </form>
   )}
 
 BlogForm.propTypes = {
-  blogs: PropTypes.array.isRequired,
-  setBlogs: PropTypes.func.isRequired,
-  setMessage: PropTypes.func.isRequired,
-  toggleBlogForm: PropTypes.func.isRequired
+  addBlogHandler: PropTypes.func.isRequired
 }
 
 export default BlogForm

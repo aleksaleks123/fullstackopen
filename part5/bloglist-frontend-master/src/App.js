@@ -36,6 +36,33 @@ const App = () => {
     blogFormRef.current.toggleVisibility()
   }
 
+  const addBlog = async (blogObject) => {
+    const returnedBlog = await blogService.create(blogObject)
+    setBlogs(blogs.concat(returnedBlog))
+    setMessage(`a new blog ${returnedBlog.title} by ${returnedBlog.author} added`)
+    setTimeout(() => {
+      setMessage(null)
+    }, 5000)
+    toggleBlogForm()
+  }
+  const addLike = async(id, blogObject) => {
+    const returnedBlog = await blogService.update(id, blogObject)
+    setMessage(`blog ${returnedBlog.title} by ${returnedBlog.author} liked`)
+    setBlogs(blogs.map(bl => bl.id !== id ? bl : returnedBlog))
+    setTimeout(() => {
+      setMessage(null)
+    }, 5000)
+  }
+
+  const removeBlog = async(blog) => {
+    await blogService.remove(blog.id)
+    setMessage(`blog ${blog.title} by ${blog.author} removed`)
+    setBlogs(blogs.filter(bl => bl.id !== blog.id))
+    setTimeout(() => {
+      setMessage(null)
+    }, 5000)
+  }
+
 
   if (user === null) {
     return (
@@ -51,11 +78,11 @@ const App = () => {
       <h2>blogs</h2>
       <Notification message={message} />
       <p>{user.name} logged in <button onClick={logoutHandle}>logout</button></p>
-      <Togglable buttonLabel='new note' ref={blogFormRef}>
-        <BlogForm blogs={blogs} setBlogs={setBlogs} setMessage={setMessage} toggleBlogForm={toggleBlogForm} />
+      <Togglable buttonLabel='new blog' ref={blogFormRef}>
+        <BlogForm addBlogHandler={addBlog} />
       </Togglable>
       {blogs.sort((a,b) => b.likes - a.likes).map(blog =>
-        <Blog key={blog.id} blog={blog} setBlogs={setBlogs} blogs={blogs} setMessage={setMessage} user={user} />
+        <Blog key={blog.id} blog={blog} user={user} addLikeHandler={addLike} removeBlogHandler={removeBlog} />
       )}
     </div>
   )
